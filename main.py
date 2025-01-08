@@ -1,8 +1,13 @@
-from fastapi import FastAPI, Path, Body
+from fastapi import FastAPI, Path, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from student import Student
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
   CORSMiddleware,
@@ -45,3 +50,23 @@ async def student_data2(name: str = Body(...), marks: int = Body(...)):
 @app.post("/students/{college}")
 async def student_data3(college: str, age: int, student: Student):
     return {"college": college, "age": age, **student.model_dump()}
+
+
+# HTMLResponse
+@app.get("/html")
+async def html():
+    ret = '''
+    <html>
+    <body>
+    <h1>Hello, World!</h1>
+    </body>
+    </html>
+    '''
+    return HTMLResponse(content=ret)
+
+
+@app.get("/html2/{name}", response_class=HTMLResponse)
+async def html2(request: Request, name: str):
+    return templates.TemplateResponse(
+        "hello.html", {"request": request, "name": name}
+    )
